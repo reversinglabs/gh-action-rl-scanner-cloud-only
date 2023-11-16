@@ -1,0 +1,111 @@
+# action.yml
+name: 'gh-action-rl-scanner-cloud-only'
+author: 'ReversingLabs'
+description: 'Scan an artifact with ReversingLabs secure.software Portal'
+
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+# we expect 'RLPORTAL_ACCESS_TOKEN' to be defined as a secret and available in the enviroment
+
+inputs:
+  rl-verbose:
+    description: 'Make the scanner more verbose'
+    required: false
+    default: false
+    # type: bool
+
+  artifact-to-scan:
+    description: 'Path to the package file (artifact) you want to scan'
+    required: true
+    # type: string
+
+  rl-portal-server:
+    description: 'the server namespace used for your company'
+    required: true
+    # type: string
+  rl-portal-org:
+    description: 'the organisation set up on the portal server for your company'
+    required: true
+    # type: string
+  rl-portal-group:
+    description: 'the group you want the scan to use (you must be a member of that group)'
+    required: true
+    # type: string
+
+  rl-package-url:
+    description: 'A package URL to use for this scan'
+    required: true
+    default: ""
+    # type: string
+  rl-diff-with:
+    description: 'Perform a diff scan against the provided version'
+    required: false
+    default: ""
+    # type: string
+
+  rl-submit-only:
+    description: 'Optionally do not wait for the scan result: bool: default False'
+    required: false
+    default: false
+    # type: bool
+
+  rl-timeout:
+    description: 'Amount of time (in minutes), the user is willing to wait for analysis before failing'
+    required: false
+    default: 20
+    # type: int
+
+  rl-proxy-server:
+    description: 'An optional proxy server to use'
+    required: false
+    default: ""
+    # type: string
+  rl-proxy-port:
+    description: 'An optional proxy server port to use'
+    required: false
+    default: ""
+    # type: string
+  rl-proxy-user:
+    description: 'An optional proxy server user to use'
+    required: false
+    default: ""
+    # type: string
+  rl-proxy-password:
+    description: 'An optional proxy server password to use'
+    required: false
+    default: ""
+    # type: string
+
+outputs:
+  description:
+    description: 'The result of the action: a string terminating in FAIL or PASS'
+    value: ${{ steps.rl-scanner-cloud.outputs.description }}
+  status:
+    description: 'The single word result of the action: success, failure or error'
+    value: ${{ steps.rl-scanner-cloud.outputs.status }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+
+    - id: rl-scanner-cloud
+      run: ${{ github.action_path }}/run-scanner-cloud.sh
+      shell: bash
+      env: # we expect RLPORTAL_ACCESS_TOKEN to be set in the environment
+        RL_VERBOSE: ${{ inputs.rl-verbose }}
+        MY_ARTIFACT_TO_SCAN_PATH: ${{ inputs.artifact-to-scan }}
+        RL_PORTAL_SERVER: ${{ inputs.rl-portal-server }}
+        RL_PORTAL_ORG: ${{ inputs.rl-portal-org }}
+        RL_PORTAL_GROUP: ${{ inputs.rl-portal-group }}
+        RL_PACKAGE_URL: ${{ inputs.rl-package-url }}
+        RL_DIFF_WITH: ${{ inputs.rl-diff-with }}
+        RL_SUBMIT_ONLY: ${{ inputs.rl-submit-only}}
+        RL_TIMEOUT: ${{ inputs.rl-timeout }}
+        RLSECURE_PROXY_SERVER: ${{ inputs.rl-proxy-server }}
+        RLSECURE_PROXY_PORT: ${{ inputs.rl-proxy-port }}
+        RLSECURE_PROXY_USER: ${{ inputs.rl-proxy-user }}
+        RLSECURE_PROXY_PASSWORD: ${{ inputs.rl-proxy-password }}
