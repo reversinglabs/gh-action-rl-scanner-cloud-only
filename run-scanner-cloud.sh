@@ -249,8 +249,6 @@ scan_with_portal()
         WITH_REPORT="--report-path=/reports --report-format=all "
     fi
 
-    # --force # temp remove force
-
     docker run --rm -u $(id -u):$(id -g) \
         -e "RLPORTAL_ACCESS_TOKEN=${RLPORTAL_ACCESS_TOKEN}" \
         ${PROXY_DATA} \
@@ -262,7 +260,7 @@ scan_with_portal()
                 --rl-portal-group "${RL_PORTAL_GROUP}" \
                 --purl=${RL_PACKAGE_URL} \
                 --file-path="/packages/${A_FILE}" \
-                --replace \
+                --replace --force \
                 ${OPTIONAL_TS} ${DIFF_WITH} ${WITH_REPORT} 1>1 2>2
     RR=$?
 
