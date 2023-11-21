@@ -103,7 +103,8 @@ If the proxy requires authentication, the proxy credentials for authentication c
 | `rl-portal-server`  | **Yes** | Name of the secure.software Portal instance to use for the scan. The Portal instance name usually matches the subdirectory of `my.secure.software` in your Portal URL. For example, if your portal URL is `my.secure.software/demo`, the instance name to use with this parameter is `demo`. |
 | `rl-portal-org`     | **Yes** | The name of a secure.software Portal organization to use for the scan. The organization must exist on the Portal instance specified with `rl-portal-server`. The user account authenticated with the token must be a member of the specified organization and have the appropriate permissions to upload and scan a file. Organization names are case-sensitive. |
 | `rl-portal-group`   | **Yes** | The name of a secure.software Portal group to use for the scan. The group must exist in the Portal organization specified with `rl-portal-org`. Group names are case-sensitive. |
-| `rl-package-url`    | **Yes**  | The package URL (PURL) used to associate the build artifact with a project and package on the Portal. PURLs are unique identifiers in the format `<project></package><@version>`. When scanning a build artifact, you must assign a PURL to it, so that it can be placed into the specified project and package as a version. If the project and package you specified don't exist in the Portal, they will be automatically created.  |
+| `rl-package-url`    | **Yes** | The package URL (PURL) used to associate the build artifact with a project and package on the Portal. PURLs are unique identifiers in the format `<project></package><@version>`. When scanning a build artifact, you must assign a PURL to it, so that it can be placed into the specified project and package as a version. If the project and package you specified don't exist in the Portal, they will be automatically created.  |
+| `report-path`       | No  | The directory where the action will store analysis reports for the build artifact. The directory must be empty. Provide the directory path relative to the `github.workspace`. Default value is `MyReportDir`. If you specify an empty string ("") as the value, report downloads will be disabled and no reports will be downloaded.|
 | `rl-diff-with`      | No  | This optional parameter lets you specify a previous version against which you want to compare (diff) the artifact version you're scanning. The specified version must exist in the same project and package as the artifact you're scanning. |
 | `rl-timeout`        | No  | This optional parameter lets you specify how long to wait for analysis to complete before failing (in minutes). The parameter accepts any integer from 10 to 1440. The default timeout is 20 minutes. |
 | `rl-submit-only`    | No  | Set to `true` to skip waiting for the analysis result. The default is `false`. |
@@ -130,7 +131,7 @@ The workflow checks out your repository, builds an artifact, uses the `rl-scanne
 
 
     name: ReversingLabs rl-scanner-cloud only
-    run-name: test scanner-cloud only
+    run-name: rl-scanner-cloud-only
 
     on:
       push:
@@ -139,38 +140,35 @@ The workflow checks out your repository, builds an artifact, uses the `rl-scanne
         branches: [ "main" ]
 
     jobs:
-      checkout-build-scan-simple:
-        # runs-on: self-hosted
+      checkout-build-scan-only:
         runs-on: ubuntu-latest
         permissions:
           statuses: write
           pull-requests: write
 
         steps:
-          # -------------------------------------
-          # we will have to checkout data before we can do anything
+          # Need to check out data before we can do anything
           - uses: actions/checkout@v3
 
-          # -------------------------------------
-          # build someting, replace this with your build process
-          # produces one filename as output in scanfile=<relative file path>
-          - name: Build
+          # Replace this with your build process
+          # Produces one file as the build artifact in scanfile=<relative file path>
+          - name: Create build artifact
             id: build
 
             shell: bash
 
             run: |
-              # prepare the build process
+              # Prepare the build process
               python3 -m pip install --upgrade pip
               pip install hatchling
               python3 -m pip install --upgrade build
-              # make the actual build
+              # Run the build
               python3 -m build
-              # produce a single artifact to scan and set the scanfile output variable
+              # Produce a single artifact to scan and set the scanfile output variable
               echo "scanfile=$( ls dist/*.whl )" >> $GITHUB_OUTPUT
 
-          # -------------------------------------
-          - name: ReversingLabs apply rl-scanner to the build artifact
+          # Use the rl-scanner-cloud-only action
+          - name: Scan build artifact on the Portal
             id: rl-scan
 
             env:
@@ -178,15 +176,12 @@ The workflow checks out your repository, builds an artifact, uses the `rl-scanne
 
             uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
             with:
-              rl-verbose: true
-              rl-portal-server: guidedTour
-              rl-portal-org: ReversingLabs
-              rl-portal-group: Demo
-              rl-timeout: 1
-              rl-submit-only: false
               artifact-to-scan: ${{ steps.build.outputs.scanfile }}
-              rl-package-url: project/package@v1.1.0
-              rl-diff-with: v1.0.0
+              rl-verbose: true
+              rl-portal-server: demo
+              rl-portal-org: ExampleOrg
+              rl-portal-group: demo-group
+              rl-package-url: my-project/my-package@1.0
 
           - name: report the scan status
             if: success() || failure()
@@ -211,5 +206,5 @@ Read more about [storing workflow data as artifacts](https://docs.github.com/en/
 
 - The official `reversinglabs/rl-scanner-cloud` Docker image [on Docker Hub](https://hub.docker.com/r/reversinglabs/rl-scanner-cloud)
 - The official [secure.software Portal documentation](https://docs.secure.software/portal/)
-- The [rl-scanner-composite](https://github.com/reversinglabs/gh-action-rl-scanner-composite) GitHub Action
+- The [rl-scanner-cloud-composite](https://github.com/reversinglabs/gh-action-rl-scanner-cloud-composite) GitHub Action
 - Introduction to [secure software release processes](https://www.reversinglabs.com/solutions/secure-software-release-processes) with ReversingLabs

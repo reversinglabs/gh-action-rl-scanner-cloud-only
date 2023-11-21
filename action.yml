@@ -20,6 +20,11 @@ inputs:
     description: 'Path to the package file (artifact) you want to scan'
     required: true
     # type: string
+  report-path:
+    description: 'Path to a directory where the reports will be saved (must be a new directory, with a path relative to the github.workspace)'
+    required: false
+    default: MyReportDir
+    # type: string
 
   rl-portal-server:
     description: 'the server namespace used for your company'
@@ -98,6 +103,7 @@ runs:
       env: # we expect RLPORTAL_ACCESS_TOKEN to be set in the environment
         RL_VERBOSE: ${{ inputs.rl-verbose }}
         MY_ARTIFACT_TO_SCAN_PATH: ${{ inputs.artifact-to-scan }}
+        REPORT_PATH: ${{ inputs.report-path }}
         RL_PORTAL_SERVER: ${{ inputs.rl-portal-server }}
         RL_PORTAL_ORG: ${{ inputs.rl-portal-org }}
         RL_PORTAL_GROUP: ${{ inputs.rl-portal-group }}

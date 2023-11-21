@@ -72,6 +72,7 @@ RL_DIFF_WITH:             O ${RL_DIFF_WITH:-No diff with was requested}
 
 RL_SUBMIT_ONLY:           O ${RL_SUBMIT_ONLY:-No submit-only flag was provided}
 RL_TIMEOUT:               O ${RL_TIMEOUT:-No timeout was provided}
+REPORT_PATH:              O ${REPORT_PATH:-No report path specified}
 
 RLSECURE_PROXY_SERVER:    O ${RLSECURE_PROXY_SERVER:-No proxy server was provided}
 RLSECURE_PROXY_PORT:      O ${RLSECURE_PROXY_PORT:-No proxy port was provided}
@@ -99,11 +100,13 @@ validate_mandatory_params()
         echo "::error FATAL: no 'RL_PORTAL_SERVER' provided"
         exit 101
     fi
+
     if [ -z "${RL_PORTAL_ORG}" ]
     then
         echo "::error FATAL: no 'RL_PORTAL_ORG' provided"
         exit 101
     fi
+
     if [ -z "${RL_PORTAL_GROUP}" ]
     then
         echo "::error FATAL: no 'RL_PORTAL_GROUP' provided"
@@ -117,11 +120,44 @@ validate_mandatory_params()
     fi
 }
 
+prep_report()
+{
+    if [ -z "${REPORT_PATH}" ]
+    then
+        return 0
+    fi
+
+    if [ -d "${REPORT_PATH}" ]
+    then
+        if rmdir "${REPORT_PATH}"
+        then
+            :
+        else
+            echo "::error FATAL: your current REPORT_PATH is not empty"
+            exit 101
+        fi
+    fi
+
+    mkdir -p "${REPORT_PATH}"
+
+    if [ "${RL_VERBOSE}" != "false" ]
+    then
+        ls -l "${REPORT_PATH}"
+    fi
+}
+
 prep_paths()
 {
     A_PATH=$( realpath "${MY_ARTIFACT_TO_SCAN_PATH}" )
     A_DIR=$( dirname "${A_PATH}" )
     A_FILE=$( basename "${A_PATH}" )
+
+    R_PATH=""
+    if [ ! -z "${REPORT_PATH}" ]
+    then
+        prep_report
+        R_PATH=$( realpath "${REPORT_PATH}" )
+    fi
 }
 
 makeDiffWith()
@@ -204,10 +240,19 @@ scan_with_portal()
     set +e # we do our own error handling in this func
     set -x
 
+    REPORT_VOLUME=""
+    WITH_REPORT=""
+
+    if [ "$R_PATH" != "" ]
+    then
+        REPORT_VOLUME="-v ${R_PATH}/:/reports"
+        WITH_REPORT="--report-path=/reports --report-format=all "
+    fi
+
     docker run --rm -u $(id -u):$(id -g) \
         -e "RLPORTAL_ACCESS_TOKEN=${RLPORTAL_ACCESS_TOKEN}" \
         ${PROXY_DATA} \
-        -v "${A_DIR}/:/packages:ro" \
+        -v "${A_DIR}/:/packages:ro" ${REPORT_VOLUME} \
         reversinglabs/rl-scanner-cloud:latest \
             rl-scan \
                 --rl-portal-server "${RL_PORTAL_SERVER}" \
@@ -216,7 +261,8 @@ scan_with_portal()
                 --purl=${RL_PACKAGE_URL} \
                 --file-path="/packages/${A_FILE}" \
                 --replace \
-                ${OPTIONAL_TS} ${DIFF_WITH} 1>1 2>2
+                --force \
+                ${OPTIONAL_TS} ${DIFF_WITH} ${WITH_REPORT} 1>1 2>2
     RR=$?
 
     # TODO: is there a 'Scan result' string ?
@@ -263,7 +309,6 @@ set_status_PassFail()
         echo "status=success" >> $GITHUB_OUTPUT
         echo "::notice::$STATUS"
     fi
-
 }
 
 main()
