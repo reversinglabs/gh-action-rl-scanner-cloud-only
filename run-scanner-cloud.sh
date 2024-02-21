@@ -260,7 +260,8 @@ scan_with_portal()
                 --rl-portal-group "${RL_PORTAL_GROUP}" \
                 --purl=${RL_PACKAGE_URL} \
                 --file-path="/packages/${A_FILE}" \
-                --replace --force \
+                --replace \
+                --force \
                 ${OPTIONAL_TS} ${DIFF_WITH} ${WITH_REPORT} 1>1 2>2
     RR=$?
 

@@ -148,7 +148,7 @@ The workflow checks out your repository, builds an artifact, uses the `rl-scanne
 
         steps:
           # Need to check out data before we can do anything
-          - uses: actions/checkout@v3
+          - uses: actions/checkout@v4
 
           # Replace this with your build process
           # Produces one file as the build artifact in scanfile=<relative file path>
