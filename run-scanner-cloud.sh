@@ -246,7 +246,7 @@ scan_with_portal()
     if [ "$R_PATH" != "" ]
     then
         REPORT_VOLUME="-v ${R_PATH}/:/reports"
-        WITH_REPORT="--report-path=/reports --report-format=all "
+        WITH_REPORT="--report-path=/reports --report-format=all --pack-safe"
     fi
 
     docker run --rm -u $(id -u):$(id -g) \

@@ -122,6 +122,19 @@ If the proxy requires authentication, the proxy credentials for authentication c
 | `description` | The result of the action - a string terminating in FAIL or PASS. |
 | `status`      | The single-word status (as is used by the GitHub Status API), representing the result of the action. It can be any of the following: success, failure, error. **Success** indicates that the resulting string contains PASS. **Failure** indicates the resulting string contains FAIL. **Error** indicates that something went wrong during the scan and the action was not able to retrieve the resulting string. |
 
+## Artifacts
+
+The action creates the reports in directory: `${{ inputs.report-path }}`.
+
+Users can control the `report-path` as an input parameter.
+
+The `report-path` will now also hold the `RL-SAFE archive`.
+
+The [RL-SAFE archive](https://docs.secure.software/concepts/analysis-reports#rl-safe-archive)
+is a convenient way to get the full SAFE report and all other supported report formats for a software package in a single file.
+The archive can be freely shared and moved between different computers, and viewed without requiring a Spectra Assure product license.
+To open the archive and work with it, you need the [SAFE Viewer](https://docs.secure.software/safe-viewer) - a free, cross-platform tool developed by ReversingLabs.
+The RL-SAFE archive is named report.rl-safe and stored in `report-path`
 
 # Examples
 
